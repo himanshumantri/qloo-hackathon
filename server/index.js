@@ -1,14 +1,15 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const { scoreFoods, suggestMusic, MODEL } = require('./agent');
+const { buildPool, warmTags, OCCASIONS } = require('./pipeline');
+const { composePlan, MODEL } = require('./agent');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
-const MAX_TEXT_LENGTH = 1000;
-const MAX_DISHES_TO_SCORE = 3;
 // Safety net for the Claude spend cap: AI requests allowed per UTC day (resets on restart too)
 const MAX_DAILY_AI_CALLS = Number(process.env.MAX_DAILY_AI_CALLS || 300);
+// Qloo requests are serialized, so cap how many plans may be in flight at once.
+const MAX_CONCURRENT_PLANS = Number(process.env.MAX_CONCURRENT_PLANS || 3);
 
 // Comma-separated list of allowed frontend origins (e.g. your Vercel URL)
 const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
@@ -54,70 +55,73 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', model: MODEL });
 });
 
-function messageFor(score) {
-  if (score >= 5) return 'Crackly crunch! Pure crunch heaven.';
-  if (score >= 4) return 'Very crunchy, a great pick.';
-  if (score >= 3) return 'Pleasantly crunchy.';
-  if (score >= 2) return 'Some crunch, but mostly soft.';
-  if (score >= 1) return 'Barely any crunch.';
-  return 'No crunch at all.';
-}
+// ---- input validation -------------------------------------------------------------
 
 const clean = (value, max) => (typeof value === 'string' ? value.trim().slice(0, max) : '');
+const int = (value, min, max, fallback) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.round(n))) : fallback;
+};
+const names = (list) =>
+  (Array.isArray(list) ? list : [])
+    .map((x) => clean(x, 60))
+    .filter(Boolean)
+    .slice(0, 5);
 
-app.post('/api/score', aiBudget, async (req, res) => {
-  const { text, brand } = req.body || {};
-  if (typeof text !== 'string' || !text.trim()) {
-    return res.status(400).json({ error: 'Please describe the food item.' });
+function parsePlanForm(body) {
+  const b = body || {};
+  const occasion = Object.keys(OCCASIONS).includes(b.occasion) ? b.occasion : 'custom';
+  const guestMin = int(b.guestMin, 1, 500, 10);
+  const guestMax = Math.max(guestMin, int(b.guestMax, 1, 500, guestMin));
+  const c = b.considerations || {};
+  const f = b.favorites || {};
+  return {
+    occasion,
+    occasionText: clean(b.occasionText, 60),
+    guestMin,
+    guestMax,
+    malePercent: int(b.malePercent, 0, 100, 50),
+    city: clean(b.city, 60),
+    considerations: {
+      allergies: clean(c.allergies, 200),
+      noise: ['low', 'high', 'any'].includes(c.noise) ? c.noise : 'any',
+      speakerFriendly: Boolean(c.speakerFriendly),
+      kidsPresent: Boolean(c.kidsPresent),
+      crunchy: Boolean(c.crunchy),
+      includeScreen: Boolean(c.includeScreen),
+    },
+    favorites: { artists: names(f.artists), brands: names(f.brands), shows: names(f.shows) },
+  };
+}
+
+// ---- routes -----------------------------------------------------------------------
+
+let plansInFlight = 0;
+
+app.post('/api/plan', aiBudget, async (req, res) => {
+  if (plansInFlight >= MAX_CONCURRENT_PLANS) {
+    return res.status(503).json({ error: 'Super Host is busy planning other parties. Please retry in a moment.' });
   }
-  if (text.length > MAX_TEXT_LENGTH) {
-    return res.status(400).json({ error: `Description is too long (max ${MAX_TEXT_LENGTH} characters).` });
-  }
-
-  const dishNames = text
-    .split(/,|;|\n/)
-    .map((d) => d.trim())
-    .filter(Boolean);
-  const brandNote = clean(brand, 100) || null;
-
-  // Too many dishes: the user must pick one first (no AI call yet).
-  if (dishNames.length > MAX_DISHES_TO_SCORE) {
-    return res.json({ needsPick: true, brand: brandNote, dishes: dishNames.map((name) => ({ name })) });
-  }
-
+  const form = parsePlanForm(req.body);
+  const started = Date.now();
+  plansInFlight += 1;
   try {
-    const scored = await scoreFoods({ dishes: dishNames, brand: brandNote });
-    const ranked = scored
-      .map((d) => ({ ...d, message: messageFor(d.score) }))
-      .sort((a, b) => b.score - a.score);
-    res.json({ needsPick: false, brand: brandNote, dishes: ranked, crunchiest: ranked[0].name });
-  } catch (err) {
-    console.error('score failed:', err.message);
-    res.status(502).json({ error: 'Could not score that right now. Please try again.' });
-  }
-});
-
-app.post('/api/music', aiBudget, async (req, res) => {
-  const { dish, score, occasion } = req.body || {};
-  const dishName = clean(dish, 100);
-  if (!dishName) {
-    return res.status(400).json({ error: 'Missing dish.' });
-  }
-  const numericScore = Number.isInteger(score) && score >= 0 && score <= 5 ? score : null;
-
-  try {
-    const suggestions = await suggestMusic({
-      dish: dishName,
-      score: numericScore,
-      occasion: clean(occasion, 100) || 'social gathering or beer party',
+    const built = await buildPool(form); // Qloo first
+    const { plan, dropped, usage } = await composePlan(form, built); // Claude strictly after
+    res.json({
+      plan,
+      signals: { ...built.signals, unresolved: built.unresolved },
+      meta: { model: MODEL, dropped, tokens: usage, ms: Date.now() - started },
     });
-    res.json({ dish: dishName, suggestions: suggestions.map((s) => ({ title: s.artist, note: s.why })) });
   } catch (err) {
-    console.error('music failed:', err.message);
-    res.status(502).json({ error: 'Could not get music suggestions right now. Please try again.' });
+    console.error('plan failed:', err.message);
+    res.status(502).json({ error: 'Could not build a plan right now. Please try again.' });
+  } finally {
+    plansInFlight -= 1;
   }
 });
 
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT} (model: ${MODEL})`);
+  warmTags().catch((err) => console.error('tag warm-up failed:', err.message));
 });
