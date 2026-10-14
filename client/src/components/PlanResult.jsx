@@ -1,4 +1,6 @@
-const TYPE_LABEL = { brand: 'Brand', place: 'Place', artist: 'Artist', movie: 'Movie', tv_show: 'TV show' }
+import { useState } from 'react'
+
+const TYPE_LABEL ={ brand: 'Brand', place: 'Place', artist: 'Artist', movie: 'Movie', tv_show: 'TV show' }
 
 function Crunch({ score }) {
   return (
@@ -25,6 +27,67 @@ function Picks({ title, items, showCrunch }) {
           </li>
         ))}
       </ul>
+    </section>
+  )
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch {
+    // Fallback for browsers without the async clipboard API.
+    try {
+      const area = document.createElement('textarea')
+      area.value = text
+      area.style.position = 'fixed'
+      area.style.opacity = '0'
+      document.body.appendChild(area)
+      area.select()
+      const ok = document.execCommand('copy')
+      document.body.removeChild(area)
+      return ok
+    } catch {
+      return false
+    }
+  }
+}
+
+function Playlist({ songs }) {
+  const [status, setStatus] = useState('')
+  if (!songs.length) return null
+  const text = songs.map((s) => `${s.artist} - ${s.title}`).join('\n')
+
+  async function copyAll() {
+    setStatus((await copyText(text)) ? 'Copied!' : 'Could not copy, select the list below instead.')
+    setTimeout(() => setStatus(''), 3000)
+  }
+
+  return (
+    <section className="block">
+      <h2>Starter playlist</h2>
+      <p className="hint">
+        Add these {songs.length} songs to a new Spotify playlist. Once they are in, Spotify suggests more songs in the
+        same vibe at the bottom of the playlist. The artists come from Qloo.
+      </p>
+      <ol className="songs">
+        {songs.map((s) => (
+          <li key={`${s.artist}-${s.title}`}>
+            <span>
+              <strong>{s.title}</strong> <small>{s.artist}</small>
+            </span>
+            <a href={s.url} target="_blank" rel="noreferrer">
+              Open in Spotify
+            </a>
+          </li>
+        ))}
+      </ol>
+      <div className="row">
+        <button type="button" className="primary" onClick={copyAll}>
+          Copy song list
+        </button>
+      </div>
+      {status && <p className="hint" role="status">{status}</p>}
     </section>
   )
 }
@@ -75,6 +138,7 @@ export default function PlanResult({ saved, onToggle, onReset }) {
 
       <Picks title="Food and drink" items={plan.food} showCrunch />
       <Picks title="Music" items={plan.music} />
+      <Playlist songs={plan.songs || []} />
       <Picks title="Watch" items={plan.watch} />
 
       <section className="block">
