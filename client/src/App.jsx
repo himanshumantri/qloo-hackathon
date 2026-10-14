@@ -8,11 +8,17 @@ import './App.css'
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
 async function post(path, body) {
-  const res = await fetch(`${API_URL}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
+  let res
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+  } catch {
+    // The browser could not reach the server at all (offline, or the free host is waking up).
+    throw new Error("Can't reach the server. It may be waking up (free hosting can take about a minute), so please try again shortly.")
+  }
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.error || 'Something went wrong.')
   return data
@@ -87,7 +93,7 @@ function App() {
       {loading ? (
         <Loading />
       ) : saved ? (
-        <PlanResult saved={saved} onToggle={toggle} onReset={reset} />
+        <PlanResult saved={saved} onToggle={toggle} onReset={reset} onMatch={(body) => post('/api/match', body)} />
       ) : (
         <Wizard initial={draft} startAtEnd={Boolean(draft)} onSubmit={generate} loading={loading} error={error} />
       )}

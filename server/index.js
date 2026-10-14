@@ -2,7 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { buildPool, warmTags, OCCASIONS } = require('./pipeline');
-const { composePlan, MODEL } = require('./agent');
+const { composePlan, composeMatchReply, MODEL } = require('./agent');
+const { findMatch, CATEGORY_TYPES } = require('./match');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -52,7 +53,7 @@ function aiBudget(_req, res, next) {
 }
 
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', model: MODEL });
+  res.json({ status: 'ok', model: MODEL, commit: (process.env.RENDER_GIT_COMMIT || 'local').slice(0, 7) });
 });
 
 // ---- input validation -------------------------------------------------------------
@@ -130,6 +131,43 @@ app.post('/api/plan', aiBudget, async (req, res) => {
     res.status(502).json({ error: 'Could not build a plan right now. Please try again.' });
   } finally {
     plansInFlight -= 1;
+  }
+});
+
+
+// ---- last-minute guest request ----------------------------------------------------
+
+const ENTITY_TYPES = ['brand', 'place', 'artist', 'tv_show', 'movie'];
+
+// Planned picks come back from the client's saved plan; keep only well-formed ones for the category.
+function parsePicks(list, category) {
+  const allowedTypes = CATEGORY_TYPES[category];
+  return (Array.isArray(list) ? list : [])
+    .filter((p) => p && typeof p.entity_id === 'string' && ENTITY_TYPES.includes(p.type) && allowedTypes.includes(p.type))
+    .slice(0, 12)
+    .map((p) => ({ entity_id: clean(p.entity_id, 64), name: clean(p.name, 100), type: p.type }));
+}
+
+app.post('/api/match', aiBudget, async (req, res) => {
+  const b = req.body || {};
+  const category = Object.keys(CATEGORY_TYPES).includes(b.category) ? b.category : null;
+  const query = clean(b.item, 60);
+  if (!category || !query) {
+    return res.status(400).json({ error: 'Choose food, music or watch and type what the guest asked for.' });
+  }
+  const picks = parsePicks(b.picks, category);
+  try {
+    const match = await findMatch({ query, category, picks }); // Qloo decides
+    if (!match.found) {
+      return res.json({
+        found: false,
+        message: `Qloo couldn't find "${query}". Check the spelling or try a more common name.`,
+      });
+    }
+    res.json({ found: true, ...(await composeMatchReply(match)) }); // Claude only words it
+  } catch (err) {
+    console.error('match failed:', err.message);
+    res.status(502).json({ error: 'Could not check that right now. Please try again.' });
   }
 });
 
