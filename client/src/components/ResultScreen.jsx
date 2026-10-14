@@ -16,9 +16,10 @@ export default function ResultScreen({ result, onPick, onMusic, onReset }) {
   const [musicError, setMusicError] = useState('')
 
   async function loadMusic() {
+    const top = result.dishes.find((d) => d.name === result.crunchiest) || result.dishes[0]
     setMusicError('')
     try {
-      setMusic(await onMusic(result.crunchiest))
+      setMusic(await onMusic(top.name, top.score))
     } catch (e) {
       setMusicError(e.message)
     }
