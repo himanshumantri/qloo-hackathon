@@ -38,7 +38,7 @@ const OCCASIONS = {
   },
   binge_night: {
     label: 'Binge night',
-    music: ['chill', 'indie'],
+    music: ['acoustic'],
     media: ['thriller', 'comedy'],
     brandTags: ['snacks'],
     placeTags: ['pizza', 'snacks'],
@@ -63,6 +63,7 @@ const OCCASIONS = {
 };
 
 const MAX_TAGS_PER_STAGE = 2;
+const MAX_AFFINITY_BRANDS = 2;
 
 // Tag-id substrings we prefer per entity type when a keyword returns several tags.
 const PREFERRED_TAG_PARTS = {
@@ -139,6 +140,14 @@ async function firstNonEmpty(attempts) {
 const ids = (list) => list.map((x) => x.entity_id);
 const dedupe = (list) => [...new Map(list.map((x) => [x.entity_id, x])).values()];
 
+// Round-robin merge of several lists, dropping duplicates.
+function interleave(lists) {
+  const merged = [];
+  const longest = Math.max(0, ...lists.map((l) => l.length));
+  for (let i = 0; i < longest; i++) for (const list of lists) if (list[i]) merged.push(list[i]);
+  return dedupe(merged);
+}
+
 // One query per tag (tags are hard filters), merged round-robin so each tag is represented.
 async function perTag(tags, makeAttempts) {
   const lists = [];
@@ -179,7 +188,7 @@ async function buildPoolInner(form) {
   const gender = form.malePercent >= 65 ? 'male' : form.malePercent <= 35 ? 'female' : undefined;
   signals.audiences = audiences.map((a) => a.name || a.id);
   if (gender) signals.notes.push(`guest mix skews ${gender}`);
-  signals.tags = [...new Set([...musicTags, ...mediaTags, ...brandTags].map((t) => t.name))];
+  signals.tags = [...new Set([...musicTags, ...mediaTags, ...brandTags].map((t) => t.name.replace(/"/g, '')))];
   signals.seeds = [
     ...new Set([...artistFavs.entities, ...brandFavs.entities, ...showFavs.entities].map((e) => e.name)),
   ];
@@ -205,14 +214,16 @@ async function buildPoolInner(form) {
     : [];
   const food = dedupe([...brands, ...places]);
 
-  // 3. Music: genre filter + favorite artists + the food picks (cross-domain) + audience/gender.
-  const musicSeeds = [...ids(artistFavs.entities), ...ids(brandFavs.entities), ...ids(brands.slice(0, 2))];
-  const music = await perTag(musicTags, (tag) => [
+  // 3. Music, two separate Qloo signals (mixing them in one query returns obscure artists):
+  //    a) genre/occasion filter, ranked by the guests' favorite artists, audience and gender;
+  //    b) cross-domain affinity: artists loved by fans of the host's food and drink brands.
+  const artistSeeds = ids(artistFavs.entities);
+  const genreMusic = await perTag(musicTags, (tag) => [
     () =>
       qloo.recommend({
         entity_type: 'artist',
         filter_tag_ids: [tag.id],
-        interest_entity_ids: musicSeeds,
+        interest_entity_ids: artistSeeds,
         audience_ids: audienceIds,
         gender,
         popularity_min: 0.7,
@@ -222,7 +233,7 @@ async function buildPoolInner(form) {
       qloo.recommend({
         entity_type: 'artist',
         filter_tag_ids: [tag.id],
-        interest_entity_ids: musicSeeds,
+        interest_entity_ids: artistSeeds,
         popularity_min: 0.6,
         limit: 8,
       }),
@@ -231,12 +242,25 @@ async function buildPoolInner(form) {
     // Some tags (e.g. kids music) match few entities as a hard filter; as a taste signal they work.
     () => qloo.recommend({ entity_type: 'artist', interest_tag_ids: [tag.id], popularity_min: 0.6, limit: 8 }),
   ]);
+  const affinityBrands = dedupe([...brandFavs.entities, ...brands]).slice(0, MAX_AFFINITY_BRANDS);
+  const brandMusic = [];
+  for (const brand of affinityBrands) {
+    const artists = await firstNonEmpty([
+      () => qloo.recommend({ entity_type: 'artist', interest_entity_ids: [brand.entity_id], popularity_min: 0.7, limit: 5 }),
+      () => qloo.recommend({ entity_type: 'artist', interest_entity_ids: [brand.entity_id], limit: 5 }),
+    ]);
+    brandMusic.push(artists.map((a) => ({ ...a, via: `fans of ${brand.name}` })));
+  }
+  const music = interleave([genreMusic, ...brandMusic]);
 
   // 4. Shows and movies: genre filter + favorite shows + the artist/brand picks.
   let tv = [];
   let movies = [];
   if (wantsScreen) {
-    const screenSeeds = [...ids(showFavs.entities), ...ids(music.slice(0, 2)), ...ids(brands.slice(0, 1))];
+    // Named favorite shows are the strongest signal; only fall back to cross-domain seeds without them.
+    const screenSeeds = showFavs.entities.length
+      ? ids(showFavs.entities)
+      : [...ids(genreMusic.slice(0, 2)), ...ids(brands.slice(0, 1))];
     const screenFor = (entity_type) =>
       perTag(mediaTags, (tag) => [
         () =>
