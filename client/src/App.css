@@ -1,0 +1,60 @@
+.app {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  text-align: left;
+}
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.screen textarea,
+.screen input {
+  font: inherit;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #888;
+}
+
+.screen button {
+  font: inherit;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #888;
+  cursor: pointer;
+}
+
+.screen button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #c0392b;
+}
+
+.dish {
+  padding: 12px;
+  border: 1px solid #888;
+  border-radius: 8px;
+}
+
+.meter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.meter span {
+  width: 28px;
+  height: 12px;
+  border-radius: 6px;
+  background: #ddd;
+}
+
+.meter span.on {
+  background: #e67e22;
+}
