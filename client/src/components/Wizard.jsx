@@ -11,9 +11,9 @@ const OCCASIONS = [
 const DEFAULT_FORM = {
   occasion: 'beer_party',
   occasionText: '',
-  guestMin: 10,
-  guestMax: 15,
+  guestRange: '5_10',
   malePercent: 50,
+  kidsCount: 2,
   city: '',
   allergies: '',
   noise: 'any',
@@ -26,17 +26,20 @@ const DEFAULT_FORM = {
   shows: '',
 }
 
+const GUEST_RANGES = [
+  { id: 'lt5', label: 'Less than 5' },
+  { id: '5_10', label: '5 to 10' },
+  { id: '10_15', label: '10 to 15' },
+  { id: '15_25', label: '15 to 25' },
+  { id: '25_plus', label: '25+' },
+]
+
 const STEPS = ['Occasion', 'Guests', 'Details']
 
 export default function Wizard({ initial, startAtEnd, onSubmit, loading, error }) {
   const [form, setForm] = useState(initial || DEFAULT_FORM)
   const [step, setStep] = useState(startAtEnd ? STEPS.length - 1 : 0)
   const set = (patch) => setForm((prev) => ({ ...prev, ...patch }))
-
-  function setGuests(field, value) {
-    const n = Math.max(1, Math.min(500, Number(value) || 1))
-    set(field === 'guestMin' ? { guestMin: n, guestMax: Math.max(n, form.guestMax) } : { guestMax: Math.max(n, form.guestMin) })
-  }
 
   return (
     <form
@@ -85,15 +88,18 @@ export default function Wizard({ initial, startAtEnd, onSubmit, loading, error }
       {step === 1 && (
         <fieldset>
           <legend>Who is coming?</legend>
-          <div className="row">
-            <label>
-              Guests, from
-              <input type="number" inputMode="numeric" min="1" max="500" value={form.guestMin} onChange={(e) => setGuests('guestMin', e.target.value)} />
-            </label>
-            <label>
-              to
-              <input type="number" inputMode="numeric" min="1" max="500" value={form.guestMax} onChange={(e) => setGuests('guestMax', e.target.value)} />
-            </label>
+          <div className="cards" role="radiogroup" aria-label="How many guests">
+            {GUEST_RANGES.map((g) => (
+              <label key={g.id} className={`card ${form.guestRange === g.id ? 'selected' : ''}`}>
+                <input
+                  type="radio"
+                  name="guestRange"
+                  checked={form.guestRange === g.id}
+                  onChange={() => set({ guestRange: g.id })}
+                />
+                {g.label}
+              </label>
+            ))}
           </div>
           <label>
             Guest mix: {form.malePercent}% male / {100 - form.malePercent}% female
@@ -103,6 +109,19 @@ export default function Wizard({ initial, startAtEnd, onSubmit, loading, error }
             <input type="checkbox" checked={form.kidsPresent} onChange={(e) => set({ kidsPresent: e.target.checked })} />
             Kids will be there
           </label>
+          {form.kidsPresent && (
+            <label>
+              How many kids?
+              <input
+                type="number"
+                inputMode="numeric"
+                min="1"
+                max="200"
+                value={form.kidsCount}
+                onChange={(e) => set({ kidsCount: Math.max(1, Math.min(200, Number(e.target.value) || 1)) })}
+              />
+            </label>
+          )}
         </fieldset>
       )}
 

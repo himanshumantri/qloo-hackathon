@@ -28,8 +28,8 @@ function toPayload(form) {
   return {
     occasion: form.occasion,
     occasionText: form.occasionText,
-    guestMin: form.guestMin,
-    guestMax: form.guestMax,
+    guestRange: form.guestRange,
+    kidsCount: form.kidsCount,
     malePercent: form.malePercent,
     city: form.city,
     considerations: {
@@ -81,7 +81,7 @@ function App() {
   return (
     <main className="app">
       <header>
-        <h1>Super Host</h1>
+        <h1>Qlooful Host</h1>
         <p className="tagline">Plan the perfect night for your guests, powered by Qloo.</p>
       </header>
       {loading ? (

@@ -68,25 +68,37 @@ const names = (list) =>
     .filter(Boolean)
     .slice(0, 5);
 
+// Guest-size choices offered in the wizard (min, max); "25+" is planned as 25-40.
+const GUEST_RANGES = {
+  lt5: [1, 4],
+  '5_10': [5, 10],
+  '10_15': [10, 15],
+  '15_25': [15, 25],
+  '25_plus': [25, 40],
+};
+
 function parsePlanForm(body) {
   const b = body || {};
   const occasion = Object.keys(OCCASIONS).includes(b.occasion) ? b.occasion : 'custom';
-  const guestMin = int(b.guestMin, 1, 500, 10);
-  const guestMax = Math.max(guestMin, int(b.guestMax, 1, 500, guestMin));
+  const guestRange = Object.keys(GUEST_RANGES).includes(b.guestRange) ? b.guestRange : '5_10';
+  const [guestMin, guestMax] = GUEST_RANGES[guestRange];
   const c = b.considerations || {};
   const f = b.favorites || {};
+  const kidsPresent = Boolean(c.kidsPresent);
   return {
     occasion,
     occasionText: clean(b.occasionText, 60),
+    guestRange,
     guestMin,
     guestMax,
+    kidsCount: kidsPresent ? int(b.kidsCount, 1, 200, 1) : 0,
     malePercent: int(b.malePercent, 0, 100, 50),
     city: clean(b.city, 60),
     considerations: {
       allergies: clean(c.allergies, 200),
       noise: ['low', 'high', 'any'].includes(c.noise) ? c.noise : 'any',
       speakerFriendly: Boolean(c.speakerFriendly),
-      kidsPresent: Boolean(c.kidsPresent),
+      kidsPresent,
       crunchy: Boolean(c.crunchy),
       includeScreen: Boolean(c.includeScreen),
     },
