@@ -42,7 +42,7 @@ function App() {
         <ResultScreen
           result={result}
           onPick={(dish) => score(dish, lastInput?.brand)}
-          onMusic={(dish) => post('/api/music', { dish })}
+          onMusic={(dish, score) => post('/api/music', { dish, score })}
           onReset={() => setResult(null)}
         />
       ) : (
