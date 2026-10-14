@@ -2,7 +2,11 @@
   max-width: 560px;
   margin: 0 auto;
   padding: 24px 16px;
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
   text-align: left;
+  box-sizing: border-box;
 }
 
 .screen {
@@ -14,17 +18,26 @@
 .screen textarea,
 .screen input {
   font: inherit;
-  padding: 10px;
+  padding: 12px;
   border-radius: 8px;
-  border: 1px solid #888;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  width: 100%;
+  box-sizing: border-box;
 }
 
+/* min-height gives a comfortable 44px touch target on phones */
 .screen button {
   font: inherit;
+  min-height: 44px;
   padding: 10px 14px;
   border-radius: 8px;
-  border: 1px solid #888;
+  border: 1px solid var(--border);
+  background: var(--accent-bg);
+  color: var(--text-h);
   cursor: pointer;
+  overflow-wrap: anywhere;
 }
 
 .screen button:disabled {
@@ -38,8 +51,9 @@
 
 .dish {
   padding: 12px;
-  border: 1px solid #888;
+  border: 1px solid var(--border);
   border-radius: 8px;
+  overflow-wrap: anywhere;
 }
 
 .meter {
@@ -49,12 +63,17 @@
 }
 
 .meter span {
-  width: 28px;
+  flex: 0 1 28px;
   height: 12px;
   border-radius: 6px;
-  background: #ddd;
+  background: var(--border);
 }
 
 .meter span.on {
   background: #e67e22;
+}
+
+.music ul {
+  padding-left: 20px;
+  overflow-wrap: anywhere;
 }
