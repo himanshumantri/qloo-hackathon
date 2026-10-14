@@ -11,6 +11,9 @@ const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
   .split(',')
   .map((o) => o.trim());
 
+// Render sits behind a proxy; trust it so req.ip is the real client IP
+app.set('trust proxy', 1);
+
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json({ limit: '10kb' }));
 
