@@ -5,6 +5,7 @@ const { buildPool, warmTags, OCCASIONS } = require('./pipeline');
 const { composePlan, composeMatchReply, MODEL } = require('./agent');
 const { findMatch, CATEGORY_TYPES } = require('./match');
 const { withTrace } = require('./qloo');
+const { recommendForGuest, CATEGORIES: GUEST_CATEGORIES } = require('./guest');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -175,6 +176,38 @@ app.post('/api/match', aiBudget, async (req, res) => {
   } catch (err) {
     console.error('match failed:', err.message);
     res.status(502).json({ error: 'Could not check that right now. Please try again.' });
+  }
+});
+
+// ---- party day: one personal recommendation per guest ------------------------------
+
+const NO_RECOMMENDATION = {
+  no_signal: (first) => `Qlooful needs a bit more to go on for ${first}. Mention an artist, a brand, a show or a genre they love.`,
+  no_strong_match: (first) => `Qlooful has no strong match for ${first} in this category yet. Try another category or add a favorite to the note.`,
+};
+
+app.post('/api/guest', aiBudget, async (req, res) => {
+  const b = req.body || {};
+  const name = clean(b.name, 40);
+  const note = clean(b.note, 500);
+  const category = Object.keys(GUEST_CATEGORIES).includes(b.category) ? b.category : null;
+  if (!name || note.length < 3 || !category) {
+    return res.status(400).json({ error: 'Add the guest\'s name, a few words about them, and pick drink, snack, music or watch.' });
+  }
+  const planned = (Array.isArray(b.planned) ? b.planned : [])
+    .filter((p) => p && typeof p.entity_id === 'string')
+    .slice(0, 40)
+    .map((p) => ({ entity_id: clean(p.entity_id, 64), name: clean(p.name, 100), type: clean(p.type, 20) }));
+  try {
+    const { result, evidence } = await withTrace(() => recommendForGuest({ name, note, category, planned }));
+    if (!result.recommendation) {
+      const first = name.split(/\s+/)[0];
+      return res.json({ found: false, message: NO_RECOMMENDATION[result.reason](first), extracted: result.extracted, evidence });
+    }
+    res.json({ found: true, ...result, evidence });
+  } catch (err) {
+    console.error('guest failed:', err.message);
+    res.status(502).json({ error: 'Could not get a recommendation right now. Please try again.' });
   }
 });
 

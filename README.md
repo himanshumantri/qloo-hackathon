@@ -17,7 +17,9 @@ Qlooful Host then plans the whole night:
 - **Music**: artists, plus a **10-song starter playlist** with a copy button and Spotify search links.
 - **Watch**: TV shows and movies for screen nights.
 - **A checklist** with "when" labels, which can be ticked off and is saved in the browser.
-- **"A guest asked for something?"**: type what a guest requested at the last minute (a dish, an artist, a show). Qlooful checks how close it is to what is already planned, so the host can answer with confidence.
+- **A party page for the day itself** (the checklist ends with an **It's party time** button), with two sections:
+  - **"A guest asked for something?"**: type what a guest requested at the last minute (a dish, an artist, a show). Qlooful checks how close it is to what is already planned, so the host can answer with confidence.
+  - **"Make every guest feel remembered"**: for each guest the host writes (or speaks) a short note, such as "Kathy is a big Coldplay fan and plays Sky Full of Stars on repeat with her beer", chooses Drink, Snack, Music or Watch, and gets **one solid, personal pick** (for Kathy, Fat Tire).
 
 Every food, music and watch pick comes from the Qloo API. Each pick shows a **match rating** (HIGH, CLOSE or WORTH A TRY) with the signals behind it, and the app lists the live Qloo requests that built the plan.
 
@@ -78,6 +80,16 @@ Qloo returns an affinity score for seeded recommendations. The app shows it as a
 | below 0.70 | not shown |
 
 Picks from genre-only searches have no affinity score in Qloo's data, so they are labelled "Genre match from Qlooful" instead of getting a rating.
+
+### Personal picks for guests
+
+`POST /api/guest` turns a short note about one guest into one recommendation:
+
+1. **AI reads the note first.** Qloo cannot parse free text, so the AI extracts only what the host wrote: names (artists, brands, shows, movies; a song becomes its artist) and short preference words such as "sci-fi" or "beer". It recommends nothing. This is the one place where AI runs before Qloo, and the UI marks it as an **AI step**.
+2. **Qloo takes over.** It resolves each name (with a typo-tolerant plausibility check) and returns candidates for the category the host chose, seeded by the guest's interests. For example, beer brands seeded by Coldplay, snack brands seeded by Doritos, or sci-fi movies seeded by Star Wars and the Avengers.
+3. **The AI picks one.** It chooses a single candidate from Qloo's list (for instance avoiding more of a franchise the guest has already watched) and words it, using only what the note says. A validator checks that the pick is an entity Qloo returned and is rated at least 0.7; otherwise the top-rated Qloo candidate is used. If nothing is rated strongly enough, the app says so instead of guessing.
+
+If the best match is already part of the plan, the pick says it is already in the house. The pick carries the same evidence as everything else: rating word, "Matched on" signals, Qlooful ID, and a count of the live Qloo requests behind it. Guest names and notes are saved only in the browser; they are sent to the AI and the server to make the pick and are not stored there. A guest's own name is never sent to Qloo; only the artists, brands and shows named in the note are searched there.
 
 ## Verify that the results come from Qloo
 
@@ -152,7 +164,8 @@ Keys are never sent to the browser, and `.env` files are git-ignored.
 client/                 React + Vite single-page app (no router, no database)
   src/App.jsx           flow: wizard -> loading -> plan
   src/components/       Wizard, Loading, PlanResult (picks, playlist, checklist,
-                        guest requests, evidence panel)
+                        evidence panel), PartyPage, GuestRequest, GuestCards,
+                        Rating
   src/storage.js        saves the plan and checklist in the browser (localStorage)
 server/                 Node + Express API (no database)
   index.js              routes (/api/plan, /api/match, /api/health), validation,
@@ -162,6 +175,8 @@ server/                 Node + Express API (no database)
   pipeline.js           Qloo-first stage that builds the candidate pool
   agent.js              Claude agent, validator, guest-request wording
   match.js              guest-request matching with Qloo
+  guest.js              one personal pick per guest: AI extraction, Qloo candidates,
+                        validated pick
   songs.js              starter playlist from the public iTunes Search API
 ```
 
@@ -176,6 +191,7 @@ server/                 Node + Express API (no database)
 - **Allergies**: Qloo has no ingredient or allergen data. The app adds a checklist warning and tells the host to check labels or the venue. It never claims anything is allergen-safe, and removes such claims from AI text.
 - **Songs**: Qloo has artists but no songs. The artists come from Qloo; the songs come from Apple's public iTunes Search API (each artist's top catalogue songs). Spotify cannot import a text list, so each song is a Spotify search link.
 - **Crunch ratings** (the optional crunchy-food toggle) are the AI's estimate. When a city is given, Qloo's "crunchy" specialty-dish tags help find places.
+- **Personal picks read free text with AI.** Qloo cannot read a sentence, so the AI extracts names and interests from the host's note before Qloo is queried. It cannot add recommendations, but it can misread a note; names Qloo cannot find are reported and ignored. Voice input uses the browser's built-in speech recognition (Chrome, Edge, Android; patchy on iPhone Safari), and text always works.
 - **Speed**: a plan takes about 20 to 30 seconds, mostly because Qloo requests run one at a time.
 - **Free hosting**: the first request after a period of inactivity is slow while the backend wakes up.
 

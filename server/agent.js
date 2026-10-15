@@ -365,4 +365,4 @@ async function composeMatchReply(match) {
   return { verdict: match.verdict, guest: match.guest, ...text, ...picks };
 }
 
-module.exports = { composePlan, composeMatchReply, validatePlan, MODEL };
+module.exports = { composePlan, composeMatchReply, validatePlan, runAgent, brand, pickShape, MODEL };

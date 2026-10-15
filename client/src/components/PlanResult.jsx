@@ -1,4 +1,6 @@
 import { useRef, useState } from 'react'
+import { Affinity } from './Rating'
+import { seconds } from '../format'
 
 const TYPE_LABEL = { brand: 'Brand', place: 'Place', artist: 'Artist', movie: 'Movie', tv_show: 'TV show' }
 
@@ -10,44 +12,6 @@ function Crunch({ score }) {
       ))}
       <b>{score}/5 crunch</b>
     </span>
-  )
-}
-
-const RATING_HELP =
-  "Qlooful's own match rating for this pick against the signals shown: HIGH, CLOSE or WORTH A TRY. Weaker matches are not shown."
-
-// Qlooful's rating bands. Anything below 0.7 is never shown (the server filters it out too).
-function matchRating(affinity) {
-  if (affinity === null || affinity === undefined) return null
-  if (affinity >= 0.95) return { text: 'HIGH match', level: 'high' }
-  if (affinity >= 0.85) return { text: 'CLOSE match', level: 'close' }
-  if (affinity >= 0.7) return { text: 'WORTH A TRY', level: 'try' }
-  return null
-}
-
-function RatingChip({ affinity }) {
-  const rating = matchRating(affinity)
-  if (!rating) return null
-  return (
-    <span className={`rating ${rating.level}`} title={RATING_HELP}>
-      {rating.text}
-    </span>
-  )
-}
-
-// Qlooful's own rating for a pick (never written by the AI) and the signals behind it.
-function Affinity({ qloo }) {
-  if (!qloo) return null
-  const { affinity, drivers = [] } = qloo
-  if (affinity === null || affinity === undefined) {
-    return <small className="affinity-note">Genre match from Qlooful</small>
-  }
-  const matched = drivers.map((d) => d.name).join(', ')
-  return (
-    <div className="affinity">
-      <RatingChip affinity={affinity} />
-      {matched && <small className="aff-why">Matched on {matched}</small>}
-    </div>
   )
 }
 
@@ -136,136 +100,6 @@ function Playlist({ songs }) {
   )
 }
 
-const CATEGORIES = [
-  { id: 'food', label: 'Food or drink', placeholder: "e.g. Domino's" },
-  { id: 'music', label: 'Music', placeholder: 'e.g. Foo Fighters' },
-  { id: 'watch', label: 'Watch', placeholder: 'e.g. Better Call Saul' },
-]
-
-const VERDICT_LABEL = {
-  on_list: 'Already on your list',
-  close_match: 'Close match',
-  loose_match: 'Partial match',
-  not_close: 'Nothing close planned',
-}
-
-const seconds = (ms) => (ms / 1000).toFixed(1)
-
-// Qlooful's rating for a guest-request result, with its position among Qlooful's nearest matches.
-function MatchNumbers({ item }) {
-  if (!matchRating(item.affinity)) return null
-  return (
-    <span className="aff-inline">
-      {' '}
-      <RatingChip affinity={item.affinity} />
-      {item.rank ? <small> #{item.rank} closest of 50</small> : null}
-    </span>
-  )
-}
-
-// "A guest asked for X": Qlooful compares it with the host's planned picks.
-function GuestRequest({ plan, onMatch }) {
-  const [category, setCategory] = useState('music')
-  const [item, setItem] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [answer, setAnswer] = useState(null)
-
-  async function check(e) {
-    e.preventDefault()
-    if (!item.trim()) return
-    setLoading(true)
-    setError('')
-    setAnswer(null)
-    try {
-      const picks = (plan[category] || []).map(({ entity_id, name, type }) => ({ entity_id, name, type }))
-      setAnswer(await onMatch({ category, item: item.trim(), picks }))
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const current = CATEGORIES.find((c) => c.id === category)
-
-  return (
-    <section className="block">
-      <h2>A guest asked for something?</h2>
-      <p className="hint">
-        Type what they asked for. Qlooful checks how close it is to what you have planned, so you can answer with
-        confidence.
-      </p>
-      <form className="match-form" onSubmit={check}>
-        <div className="chips" role="radiogroup" aria-label="What kind of request">
-          {CATEGORIES.map((c) => (
-            <label key={c.id} className={`chip ${category === c.id ? 'selected' : ''}`}>
-              <input type="radio" name="matchCategory" checked={category === c.id} onChange={() => setCategory(c.id)} />
-              {c.label}
-            </label>
-          ))}
-        </div>
-        <input
-          value={item}
-          onChange={(e) => setItem(e.target.value)}
-          placeholder={current.placeholder}
-          maxLength={60}
-          aria-label="What the guest asked for"
-        />
-        <button type="submit" className="primary" disabled={loading || !item.trim()}>
-          {loading ? 'Checking with Qlooful...' : 'Check with Qlooful'}
-        </button>
-      </form>
-      {error && <p className="error" role="alert">{error}</p>}
-      {answer && !answer.found && <p className="warning-text" role="status">{answer.message}</p>}
-      {answer && answer.found && (
-        <div className={`answer ${answer.verdict}`} role="status">
-          <small className="tag">{VERDICT_LABEL[answer.verdict]}</small>
-          <h3>{answer.headline}</h3>
-          <p>
-            <span className="ai-tag">AI note</span> {answer.reply}
-          </p>
-          <p className="hint">Qlooful understood the request as {answer.guest.name}.</p>
-          {answer.closest.length > 0 && answer.verdict !== 'on_list' && (
-            <>
-              <h4>Closest on your list</h4>
-              <ul className="mini">
-                {answer.closest.map((c) => (
-                  <li key={c.entity_id}>
-                    <strong>{c.name}</strong>
-                    <MatchNumbers item={c} />
-                    {c.why && <span> {c.why}</span>}
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-          {answer.suggestions.length > 0 && answer.verdict !== 'on_list' && (
-            <>
-              <h4>Qlooful suggests adding</h4>
-              <ul className="mini">
-                {answer.suggestions.map((c) => (
-                  <li key={c.entity_id}>
-                    <strong>{c.name}</strong>
-                    <MatchNumbers item={c} />
-                    {c.why && <span> {c.why}</span>}
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-          {answer.evidence && (
-            <p className="hint">
-              Answered from {answer.evidence.requests} live Qlooful request{answer.evidence.requests === 1 ? '' : 's'} (
-              {seconds(answer.evidence.totalMs)}s).
-            </p>
-          )}
-        </div>
-      )}
-    </section>
-  )
-}
-
 // The proof panel: what Qlooful was asked, and every live request made to build this plan.
 function Proof({ signals, evidence, open, onToggle, panelRef }) {
   const rows = [
@@ -317,7 +151,7 @@ function Proof({ signals, evidence, open, onToggle, panelRef }) {
   )
 }
 
-export default function PlanResult({ saved, onToggle, onReset, onMatch }) {
+export default function PlanResult({ saved, onToggle, onReset, onParty }) {
   const { plan, signals, checked, evidence } = saved
   const done = plan.checklist.filter((_, i) => checked[i]).length
   const [proofOpen, setProofOpen] = useState(false)
@@ -379,7 +213,16 @@ export default function PlanResult({ saved, onToggle, onReset, onMatch }) {
         </ul>
       </section>
 
-      <GuestRequest plan={plan} onMatch={onMatch} />
+      <section className="block party-cta">
+        <h2>Ready for the party?</h2>
+        <p className="hint">
+          On the day, open the party page to handle last-minute guest requests and give each guest one personal
+          recommendation.
+        </p>
+        <button type="button" className="primary" onClick={onParty}>
+          It&apos;s party time
+        </button>
+      </section>
 
       <Proof signals={signals} evidence={evidence} open={proofOpen} onToggle={setProofOpen} panelRef={proofRef} />
 
