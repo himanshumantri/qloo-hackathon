@@ -4,7 +4,7 @@ const BASE_URL = process.env.QLOO_BASE_URL || 'https://hackathon.api.qloo.com';
 
 // Picks Qloo scores below this affinity are never shown to the host (weak matches).
 // Picks with no score at all (genre-only searches) are kept.
-const MIN_AFFINITY = 0.8;
+const MIN_AFFINITY = 0.7;
 const isStrongMatch = (entity) => entity.affinity === null || entity.affinity === undefined || entity.affinity >= MIN_AFFINITY;
 
 const ENTITY_TYPES = {

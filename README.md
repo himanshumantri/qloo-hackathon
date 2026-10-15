@@ -41,7 +41,7 @@ Wizard answers
       v
 3. Validator (code)
    drops any pick whose entity ID Qloo did not return, and any pick Qloo
-   rates below 0.8
+   rates below 0.7
       |
       v
 Plan + checklist + evidence (the live Qloo requests that built it)
@@ -73,9 +73,9 @@ Qloo returns an affinity score for seeded recommendations. The app shows it as a
 | Qloo affinity | Shown as |
 |---|---|
 | 0.95 or higher | **HIGH match** |
-| 0.90 to 0.95 | **CLOSE match** |
-| 0.80 to 0.90 | **WORTH A TRY** |
-| below 0.80 | not shown |
+| 0.85 to 0.95 | **CLOSE match** |
+| 0.70 to 0.85 | **WORTH A TRY** |
+| below 0.70 | not shown |
 
 Picks from genre-only searches have no affinity score in Qloo's data, so they are labelled "Genre match from Qlooful" instead of getting a rating.
 
