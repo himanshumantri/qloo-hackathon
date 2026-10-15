@@ -85,14 +85,15 @@ async function findMatch({ query, category, picks }) {
     lists.set(type, await qloo.similar({ entity_id: guest.entity_id, entity_type: type, limit: SIMILAR_LIMIT }).catch(() => []));
   }
 
+  // Rank (position in Qloo's list) and Qloo's own affinity score for a planned pick.
   const rankIn = (type, id) => {
     const index = (lists.get(type) || []).findIndex((e) => e.entity_id === id);
-    return index === -1 ? null : index + 1;
+    return index === -1 ? null : { rank: index + 1, affinity: lists.get(type)[index].affinity };
   };
 
   let closest = picks
-    .map((p) => ({ ...p, rank: rankIn(p.type, p.entity_id) }))
-    .filter((p) => p.rank !== null)
+    .map((p) => ({ ...p, ...rankIn(p.type, p.entity_id) }))
+    .filter((p) => p.rank !== undefined && qloo.isStrongMatch(p))
     .sort((a, b) => a.rank - b.rank);
 
   // Nothing found from the guest's side: check the other direction (picks seeding Qloo).
@@ -102,16 +103,16 @@ async function findMatch({ query, category, picks }) {
         .similar({ entity_id: pick.entity_id, entity_type: guest.type, limit: SIMILAR_LIMIT })
         .catch(() => []);
       const index = fromPick.findIndex((e) => e.entity_id === guest.entity_id);
-      if (index !== -1) closest.push({ ...pick, rank: index + 1 });
+      if (index !== -1 && qloo.isStrongMatch(fromPick[index])) closest.push({ ...pick, rank: index + 1, affinity: fromPick[index].affinity });
     }
     closest.sort((a, b) => a.rank - b.rank);
   }
 
   const plannedIds = new Set(picks.map((p) => p.entity_id));
   const suggestions = (lists.get(guest.type) || [])
-    .filter((e) => e.entity_id !== guest.entity_id && !plannedIds.has(e.entity_id))
+    .filter((e) => e.entity_id !== guest.entity_id && !plannedIds.has(e.entity_id) && qloo.isStrongMatch(e))
     .slice(0, MAX_SUGGESTIONS)
-    .map((e) => ({ entity_id: e.entity_id, name: e.name, type: e.type }));
+    .map((e) => ({ entity_id: e.entity_id, name: e.name, type: e.type, affinity: e.affinity }));
 
   // close: among Qloo's 20 nearest matches; loose: only in its top 50; none: not in the top 50.
   const verdict = !closest.length ? 'not_close' : closest[0].rank <= CLOSE_RANK ? 'close_match' : 'loose_match';
