@@ -119,4 +119,4 @@ async function findMatch({ query, category, picks }) {
   return { found: true, verdict, guest, closest, suggestions };
 }
 
-module.exports = { findMatch, CATEGORY_TYPES };
+module.exports = { findMatch, CATEGORY_TYPES, plausible, queryVariants };

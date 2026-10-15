@@ -623,3 +623,122 @@ dd {
 .rating.try {
   background: #b9770e;
 }
+
+/* ---- party day page ---- */
+.app.wide {
+  max-width: 1000px;
+}
+
+.party-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.party-head h2 {
+  margin: 0;
+}
+
+.party-cta {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.guests-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.guests {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* One guest = three parts: who / about them / the one pick. Stacked on phones, columns on wide screens. */
+.guest-card {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.gc-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.gc-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+@media (min-width: 720px) {
+  .guest-card {
+    grid-template-columns: 1fr 1.4fr 1.3fr;
+  }
+}
+
+.link-btn {
+  align-self: flex-start;
+  border: 0 !important;
+  background: none !important;
+  text-decoration: underline;
+  min-height: 36px !important;
+  padding: 4px 0 !important;
+  font-size: 14px;
+}
+
+.rec-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #2e8b57;
+  border-radius: 8px;
+  background: rgba(46, 139, 87, 0.07);
+  overflow-wrap: anywhere;
+}
+
+.rec-card h4 {
+  margin: 0;
+  font-size: 17px;
+  color: var(--text-h);
+}
+
+.rec-card p {
+  margin: 0;
+  font-size: 15px;
+}
+
+.on-plan {
+  color: #2e8b57;
+  font-weight: 600;
+}
+
+.rec-proof summary {
+  min-height: 36px;
+  font-size: 14px;
+}
+
+/* Example sentences in the note box: light, and gone as soon as the host types or speaks. */
+.guest-card textarea::placeholder {
+  color: var(--text);
+  opacity: 0.55;
+  font-style: italic;
+}
