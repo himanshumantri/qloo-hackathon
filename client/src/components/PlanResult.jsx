@@ -92,6 +92,112 @@ function Playlist({ songs }) {
   )
 }
 
+const CATEGORIES = [
+  { id: 'food', label: 'Food or drink', placeholder: "e.g. Domino's" },
+  { id: 'music', label: 'Music', placeholder: 'e.g. Foo Fighters' },
+  { id: 'watch', label: 'Watch', placeholder: 'e.g. Better Call Saul' },
+]
+
+const VERDICT_LABEL = {
+  on_list: 'Already on your list',
+  close_match: 'Close match',
+  loose_match: 'Partial match',
+  not_close: 'Nothing close planned',
+}
+
+// "A guest asked for X": Qloo compares it with the host's planned picks.
+function GuestRequest({ plan, onMatch }) {
+  const [category, setCategory] = useState('music')
+  const [item, setItem] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [answer, setAnswer] = useState(null)
+
+  async function check(e) {
+    e.preventDefault()
+    if (!item.trim()) return
+    setLoading(true)
+    setError('')
+    setAnswer(null)
+    try {
+      const picks = (plan[category] || []).map(({ entity_id, name, type }) => ({ entity_id, name, type }))
+      setAnswer(await onMatch({ category, item: item.trim(), picks }))
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const current = CATEGORIES.find((c) => c.id === category)
+
+  return (
+    <section className="block">
+      <h2>A guest asked for something?</h2>
+      <p className="hint">
+        Type what they asked for. Qloo checks how close it is to what you have planned, so you can answer with
+        confidence.
+      </p>
+      <form className="match-form" onSubmit={check}>
+        <div className="chips" role="radiogroup" aria-label="What kind of request">
+          {CATEGORIES.map((c) => (
+            <label key={c.id} className={`chip ${category === c.id ? 'selected' : ''}`}>
+              <input type="radio" name="matchCategory" checked={category === c.id} onChange={() => setCategory(c.id)} />
+              {c.label}
+            </label>
+          ))}
+        </div>
+        <input
+          value={item}
+          onChange={(e) => setItem(e.target.value)}
+          placeholder={current.placeholder}
+          maxLength={60}
+          aria-label="What the guest asked for"
+        />
+        <button type="submit" className="primary" disabled={loading || !item.trim()}>
+          {loading ? 'Checking with Qloo...' : 'Check with Qloo'}
+        </button>
+      </form>
+      {error && <p className="error" role="alert">{error}</p>}
+      {answer && !answer.found && <p className="warning-text" role="status">{answer.message}</p>}
+      {answer && answer.found && (
+        <div className={`answer ${answer.verdict}`} role="status">
+          <small className="tag">{VERDICT_LABEL[answer.verdict]}</small>
+          <h3>{answer.headline}</h3>
+          <p>{answer.reply}</p>
+          <p className="hint">Qloo understood the request as {answer.guest.name}.</p>
+          {answer.closest.length > 0 && answer.verdict !== 'on_list' && (
+            <>
+              <h4>Closest on your list</h4>
+              <ul className="mini">
+                {answer.closest.map((c) => (
+                  <li key={c.entity_id}>
+                    <strong>{c.name}</strong>
+                    {c.why && <span> {c.why}</span>}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          {answer.suggestions.length > 0 && answer.verdict !== 'on_list' && (
+            <>
+              <h4>Qloo suggests adding</h4>
+              <ul className="mini">
+                {answer.suggestions.map((c) => (
+                  <li key={c.entity_id}>
+                    <strong>{c.name}</strong>
+                    {c.why && <span> {c.why}</span>}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
+    </section>
+  )
+}
+
 function Signals({ signals }) {
   const rows = [
     ['Occasion', signals.occasion],
@@ -120,7 +226,7 @@ function Signals({ signals }) {
   )
 }
 
-export default function PlanResult({ saved, onToggle, onReset }) {
+export default function PlanResult({ saved, onToggle, onReset, onMatch }) {
   const { plan, signals, checked } = saved
   const done = plan.checklist.filter((_, i) => checked[i]).length
 
@@ -160,6 +266,8 @@ export default function PlanResult({ saved, onToggle, onReset }) {
           ))}
         </ul>
       </section>
+
+      <GuestRequest plan={plan} onMatch={onMatch} />
 
       <Signals signals={signals} />
 
