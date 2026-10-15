@@ -10,6 +10,15 @@ const CATEGORY_OPTIONS = [
   { id: 'watch', label: 'Watch' },
 ]
 
+// Example notes shown as light placeholder text (they vanish once the host types or speaks).
+// They match the category chosen for the guest.
+const NOTE_EXAMPLES = {
+  drink: 'e.g. Kathy is a big Coldplay fan and loves a cold beer while "Sky Full of Stars" plays on repeat.\nOr: Sam only drinks red wine and loves jazz.',
+  snack: 'e.g. Chris binges sci-fi with a bag of Doritos in hand.\nOr: Priya loves anything spicy, especially chips.',
+  music: 'e.g. Kathy is a big Coldplay fan who plays "Sky Full of Stars" on repeat.\nOr: Sam grew up on Arctic Monkeys and Radiohead.',
+  watch: 'e.g. Chris has watched every Star Wars and Avengers film and loves sci-fi.\nOr: Priya only watches thrillers and crime shows.',
+}
+
 // Speech-to-text happens on the device (Chrome, Edge, Android); no audio is sent anywhere.
 const SpeechRecognition =
   typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition)
@@ -141,8 +150,8 @@ export default function GuestCards({ guests, onUpdate, onAdd, onRemove, onRecomm
                   <textarea
                     value={guest.note}
                     onChange={(e) => update(guest.id, { note: e.target.value, result: null })}
-                    placeholder="e.g. Big Coldplay fan, plays Sky Full of Stars on repeat with her beer"
-                    rows={4}
+                    placeholder={NOTE_EXAMPLES[guest.category]}
+                    rows={5}
                     maxLength={500}
                   />
                 </label>
