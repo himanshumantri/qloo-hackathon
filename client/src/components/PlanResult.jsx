@@ -68,7 +68,7 @@ function Playlist({ songs }) {
       <h2>Starter playlist</h2>
       <p className="hint">
         Add these {songs.length} songs to a new Spotify playlist. Once they are in, Spotify suggests more songs in the
-        same vibe at the bottom of the playlist. The artists come from Qloo.
+        same vibe at the bottom of the playlist. The artists come from Qlooful.
       </p>
       <ol className="songs">
         {songs.map((s) => (
@@ -105,7 +105,7 @@ const VERDICT_LABEL = {
   not_close: 'Nothing close planned',
 }
 
-// "A guest asked for X": Qloo compares it with the host's planned picks.
+// "A guest asked for X": Qlooful compares it with the host's planned picks.
 function GuestRequest({ plan, onMatch }) {
   const [category, setCategory] = useState('music')
   const [item, setItem] = useState('')
@@ -135,7 +135,7 @@ function GuestRequest({ plan, onMatch }) {
     <section className="block">
       <h2>A guest asked for something?</h2>
       <p className="hint">
-        Type what they asked for. Qloo checks how close it is to what you have planned, so you can answer with
+        Type what they asked for. Qlooful checks how close it is to what you have planned, so you can answer with
         confidence.
       </p>
       <form className="match-form" onSubmit={check}>
@@ -155,7 +155,7 @@ function GuestRequest({ plan, onMatch }) {
           aria-label="What the guest asked for"
         />
         <button type="submit" className="primary" disabled={loading || !item.trim()}>
-          {loading ? 'Checking with Qloo...' : 'Check with Qloo'}
+          {loading ? 'Checking with Qlooful...' : 'Check with Qlooful'}
         </button>
       </form>
       {error && <p className="error" role="alert">{error}</p>}
@@ -165,7 +165,7 @@ function GuestRequest({ plan, onMatch }) {
           <small className="tag">{VERDICT_LABEL[answer.verdict]}</small>
           <h3>{answer.headline}</h3>
           <p>{answer.reply}</p>
-          <p className="hint">Qloo understood the request as {answer.guest.name}.</p>
+          <p className="hint">Qlooful understood the request as {answer.guest.name}.</p>
           {answer.closest.length > 0 && answer.verdict !== 'on_list' && (
             <>
               <h4>Closest on your list</h4>
@@ -181,7 +181,7 @@ function GuestRequest({ plan, onMatch }) {
           )}
           {answer.suggestions.length > 0 && answer.verdict !== 'on_list' && (
             <>
-              <h4>Qloo suggests adding</h4>
+              <h4>Qlooful suggests adding</h4>
               <ul className="mini">
                 {answer.suggestions.map((c) => (
                   <li key={c.entity_id}>
@@ -201,18 +201,18 @@ function GuestRequest({ plan, onMatch }) {
 function Signals({ signals }) {
   const rows = [
     ['Occasion', signals.occasion],
-    ['Qloo tags used', (signals.tags || []).join(', ')],
-    ['Guest favorites matched in Qloo', (signals.seeds || []).join(', ')],
+    ['Qlooful tags used', (signals.tags || []).join(', ')],
+    ['Guest favorites matched in Qlooful', (signals.seeds || []).join(', ')],
     ['Audiences', (signals.audiences || []).join(', ')],
     ['Notes', (signals.notes || []).join(', ')],
-    ['Not found in Qloo', (signals.unresolved || []).join(', ')],
+    ['Not found in Qlooful', (signals.unresolved || []).join(', ')],
   ].filter(([, value]) => value)
   return (
     <details className="block">
-      <summary>How Qloo shaped this plan</summary>
+      <summary>How Qlooful shaped this plan</summary>
       <p className="hint">
-        Every food, music and watch pick above came from Qloo. Super Host only chose among Qloo&apos;s results and
-        wrote the explanations and checklist.
+        Every food, music and watch pick above came from Qlooful&apos;s taste data. The planner only chose among those
+        results and wrote the explanations and checklist.
       </p>
       <dl>
         {rows.map(([label, value]) => (

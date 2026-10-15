@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 
 // Planning takes 30-45 seconds, so show what Super Host is doing while the host waits.
 const MESSAGES = [
-  'Asking Qloo what your guests will love...',
+  'Asking Qlooful what your guests will love...',
   'Matching food brands and places...',
   'Finding music that fits the food and the crowd...',
   'Checking movies and shows...',

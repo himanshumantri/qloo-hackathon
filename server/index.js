@@ -113,7 +113,7 @@ let plansInFlight = 0;
 
 app.post('/api/plan', aiBudget, async (req, res) => {
   if (plansInFlight >= MAX_CONCURRENT_PLANS) {
-    return res.status(503).json({ error: 'Super Host is busy planning other parties. Please retry in a moment.' });
+    return res.status(503).json({ error: 'Qlooful Host is busy planning other parties. Please retry in a moment.' });
   }
   const form = parsePlanForm(req.body);
   const started = Date.now();
@@ -161,7 +161,7 @@ app.post('/api/match', aiBudget, async (req, res) => {
     if (!match.found) {
       return res.json({
         found: false,
-        message: `Qloo couldn't find "${query}". Check the spelling or try a more common name.`,
+        message: `Qlooful couldn't find "${query}". Check the spelling or try a more common name.`,
       });
     }
     res.json({ found: true, ...(await composeMatchReply(match)) }); // Claude only words it
