@@ -742,3 +742,57 @@ dd {
   opacity: 0.55;
   font-style: italic;
 }
+
+/* ---- polish: Qlooful IDs bottom-right, bolder party CTA, new-party button ---- */
+.qid {
+  text-align: right;
+}
+
+.party-cta {
+  margin: 36px 0;
+  padding: 26px 20px;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #6d28d9 0%, #c026d3 55%, #f97316 100%);
+  text-align: center;
+  align-items: center;
+  box-shadow: 0 10px 24px rgba(109, 40, 217, 0.3);
+}
+
+.party-cta h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 26px;
+}
+
+.party-cta .hint {
+  color: rgba(255, 255, 255, 0.92);
+  max-width: 34em;
+}
+
+.party-icons {
+  font-size: 30px;
+  letter-spacing: 6px;
+}
+
+.screen .party-cta button.primary {
+  background: #fff;
+  border-color: #fff;
+  color: #6d28d9;
+  font-size: 18px;
+  padding: 12px 26px;
+  width: 100%;
+  max-width: 340px;
+}
+
+.new-party {
+  margin-top: 8px;
+}
+
+.screen .new-party-btn {
+  width: 100%;
+  background: transparent;
+  border: 2px dashed #c026d3;
+  color: #a21caf;
+  font-weight: 600;
+}

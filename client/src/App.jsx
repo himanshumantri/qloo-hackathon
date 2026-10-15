@@ -134,6 +134,7 @@ function App() {
           onAddGuest={addGuest}
           onRemoveGuest={removeGuest}
           onRecommend={recommendForGuest}
+          onNewParty={reset}
         />
       ) : saved ? (
         <PlanResult saved={saved} onToggle={toggle} onReset={reset} onParty={openParty} />

@@ -95,7 +95,7 @@ If the best match is already part of the plan, the pick says it is already in th
 
 You do not have to take this on trust:
 
-1. **In the app**: every pick carries a Qlooful ID (the Qloo entity ID). A green banner at the top of the plan says how many live Qloo requests built it, and **See the live requests** opens a panel listing each one (what was asked, the endpoint, how many results came back, and how long it took). Text written by AI is marked **AI note**; everything else is Qloo data.
+1. **In the app**: every pick carries a Qlooful ID (the Qloo entity ID). A green banner at the top of the plan says how many live Qloo requests built it, and **See the live requests** opens a panel listing each one (what was asked, the endpoint, how many results came back, and how long it took). The picks, ratings and IDs are Qloo data; the AI only writes the one-line explanations, the checklist and the wording of replies.
 2. **In the API response**: `POST /api/plan` returns, for each pick, a `qloo` object (affinity, popularity and the signals that drove it) and an `evidence` object with the full request log:
 
    ```bash
