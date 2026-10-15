@@ -13,24 +13,39 @@ function Crunch({ score }) {
   )
 }
 
-const AFFINITY_HELP =
-  "Qlooful's own affinity score for this pick, from 0 to 1. Higher means a stronger taste link to the signals shown."
+const RATING_HELP =
+  "Qlooful's own match rating for this pick against the signals shown: HIGH, CLOSE or WORTH A TRY. Weaker matches are not shown."
 
-// Qlooful's own numbers for a pick (never written by the AI): affinity score and the signals behind it.
+// Qlooful's rating bands. Anything below 0.8 is never shown (the server filters it out too).
+function matchRating(affinity) {
+  if (affinity === null || affinity === undefined) return null
+  if (affinity >= 0.95) return { text: 'HIGH match', level: 'high' }
+  if (affinity >= 0.9) return { text: 'CLOSE match', level: 'close' }
+  if (affinity >= 0.8) return { text: 'WORTH A TRY', level: 'try' }
+  return null
+}
+
+function RatingChip({ affinity }) {
+  const rating = matchRating(affinity)
+  if (!rating) return null
+  return (
+    <span className={`rating ${rating.level}`} title={RATING_HELP}>
+      {rating.text}
+    </span>
+  )
+}
+
+// Qlooful's own rating for a pick (never written by the AI) and the signals behind it.
 function Affinity({ qloo }) {
   if (!qloo) return null
   const { affinity, drivers = [] } = qloo
   if (affinity === null || affinity === undefined) {
-    return <small className="affinity-note">Genre match from Qlooful (genre-only searches have no affinity score)</small>
+    return <small className="affinity-note">Genre match from Qlooful</small>
   }
-  const matched = drivers.map((d) => (drivers.length > 1 ? `${d.name} (${d.score.toFixed(2)})` : d.name)).join(', ')
+  const matched = drivers.map((d) => d.name).join(', ')
   return (
-    <div className="affinity" title={AFFINITY_HELP}>
-      <span className="aff-label">Qlooful affinity</span>
-      <span className="aff-bar" aria-hidden="true">
-        <i style={{ width: `${Math.round(affinity * 100)}%` }} />
-      </span>
-      <b>{affinity.toFixed(2)}</b>
+    <div className="affinity">
+      <RatingChip affinity={affinity} />
       {matched && <small className="aff-why">Matched on {matched}</small>}
     </div>
   )
@@ -136,15 +151,15 @@ const VERDICT_LABEL = {
 
 const seconds = (ms) => (ms / 1000).toFixed(1)
 
-// One line of Qlooful's own numbers for a guest-request result.
+// Qlooful's rating for a guest-request result, with its position among Qlooful's nearest matches.
 function MatchNumbers({ item }) {
-  if (item.affinity === null || item.affinity === undefined) return null
+  if (!matchRating(item.affinity)) return null
   return (
-    <small className="aff-inline" title={AFFINITY_HELP}>
+    <span className="aff-inline">
       {' '}
-      Qlooful affinity {item.affinity.toFixed(2)}
-      {item.rank ? ` · #${item.rank} closest of 50` : ''}
-    </small>
+      <RatingChip affinity={item.affinity} />
+      {item.rank ? <small> #{item.rank} closest of 50</small> : null}
+    </span>
   )
 }
 
@@ -265,7 +280,7 @@ function Proof({ signals, evidence, open, onToggle, panelRef }) {
     <details className="block proof" open={open} onToggle={(e) => onToggle(e.currentTarget.open)} ref={panelRef}>
       <summary>How Qlooful shaped this plan</summary>
       <p className="hint">
-        Every food, music and watch pick above came from Qlooful&apos;s taste data, along with its affinity score and
+        Every food, music and watch pick above came from Qlooful&apos;s taste data, along with its match rating and
         ID. The planner (AI) only chose among those results and wrote the notes marked &quot;AI note&quot; and the
         checklist.
       </p>
@@ -322,7 +337,7 @@ export default function PlanResult({ saved, onToggle, onReset, onMatch }) {
         <div className="evidence-banner" role="note">
           <strong>Built from {evidence.requests} live Qlooful requests</strong>
           <span>
-            Every pick below carries Qlooful&apos;s own ID and score. Text marked &quot;AI note&quot; is the only part
+            Every pick below carries Qlooful&apos;s own ID and match rating. Text marked &quot;AI note&quot; is the only part
             written by AI.
           </span>
           <button type="button" onClick={showProof}>

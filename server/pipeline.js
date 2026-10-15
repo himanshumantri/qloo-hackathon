@@ -277,7 +277,8 @@ async function buildPoolInner(form) {
     movies = await screenFor('movie');
   }
 
-  return { pool: { food, music, tv, movies }, signals, unresolved, wantsScreen };
+  const strong = (list) => list.filter(qloo.isStrongMatch);
+  return { pool: { food: strong(food), music: strong(music), tv: strong(tv), movies: strong(movies) }, signals, unresolved, wantsScreen };
 }
 
 // Pre-resolve every occasion keyword so the first real request doesn't pay for tag lookups.

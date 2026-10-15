@@ -243,7 +243,7 @@ function validatePlan(plan, seen, hasAllergies = false) {
   const keep = (list, extra = () => ({})) =>
     (list || []).flatMap((pick) => {
       const entity = seen.get(pick.entity_id);
-      if (!entity) {
+      if (!entity || !qloo.isStrongMatch(entity)) {
         dropped += 1;
         return [];
       }
@@ -352,7 +352,7 @@ async function composeMatchReply(match) {
     const keep = (list) =>
       (list || []).flatMap((p) => {
         const e = allowed.get(p.entity_id);
-        return e ? [{ entity_id: e.entity_id, name: e.name, type: e.type, why: brand(p.why), affinity: e.affinity ?? null, rank: e.rank ?? null }] : [];
+        return e && qloo.isStrongMatch(e) ? [{ entity_id: e.entity_id, name: e.name, type: e.type, why: brand(p.why), affinity: e.affinity ?? null, rank: e.rank ?? null }] : [];
       });
     picks = { closest: keep(result.closest), suggestions: keep(result.suggestions) };
   } catch (err) {

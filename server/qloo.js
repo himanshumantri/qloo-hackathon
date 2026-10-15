@@ -2,6 +2,11 @@
 // (and the agent) only see the fields they need, which keeps token usage low.
 const BASE_URL = process.env.QLOO_BASE_URL || 'https://hackathon.api.qloo.com';
 
+// Picks Qloo scores below this affinity are never shown to the host (weak matches).
+// Picks with no score at all (genre-only searches) are kept.
+const MIN_AFFINITY = 0.8;
+const isStrongMatch = (entity) => entity.affinity === null || entity.affinity === undefined || entity.affinity >= MIN_AFFINITY;
+
 const ENTITY_TYPES = {
   artist: 'urn:entity:artist',
   place: 'urn:entity:place',
@@ -215,6 +220,8 @@ async function similar({ entity_id, entity_type, limit }) {
 
 module.exports = {
   ENTITY_TYPES,
+  MIN_AFFINITY,
+  isStrongMatch,
   withTrace,
   nameOf,
   searchEntities,

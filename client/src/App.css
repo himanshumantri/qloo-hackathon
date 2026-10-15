@@ -603,3 +603,23 @@ dd {
   font-family: var(--mono);
   font-size: 12px;
 }
+
+/* ---- match rating chips (replace raw scores) ---- */
+.rating {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: #2e8b57;
+}
+
+.rating.close {
+  background: #3a7bd5;
+}
+
+.rating.try {
+  background: #b9770e;
+}

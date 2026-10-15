@@ -93,7 +93,7 @@ async function findMatch({ query, category, picks }) {
 
   let closest = picks
     .map((p) => ({ ...p, ...rankIn(p.type, p.entity_id) }))
-    .filter((p) => p.rank !== undefined)
+    .filter((p) => p.rank !== undefined && qloo.isStrongMatch(p))
     .sort((a, b) => a.rank - b.rank);
 
   // Nothing found from the guest's side: check the other direction (picks seeding Qloo).
@@ -103,14 +103,14 @@ async function findMatch({ query, category, picks }) {
         .similar({ entity_id: pick.entity_id, entity_type: guest.type, limit: SIMILAR_LIMIT })
         .catch(() => []);
       const index = fromPick.findIndex((e) => e.entity_id === guest.entity_id);
-      if (index !== -1) closest.push({ ...pick, rank: index + 1, affinity: fromPick[index].affinity });
+      if (index !== -1 && qloo.isStrongMatch(fromPick[index])) closest.push({ ...pick, rank: index + 1, affinity: fromPick[index].affinity });
     }
     closest.sort((a, b) => a.rank - b.rank);
   }
 
   const plannedIds = new Set(picks.map((p) => p.entity_id));
   const suggestions = (lists.get(guest.type) || [])
-    .filter((e) => e.entity_id !== guest.entity_id && !plannedIds.has(e.entity_id))
+    .filter((e) => e.entity_id !== guest.entity_id && !plannedIds.has(e.entity_id) && qloo.isStrongMatch(e))
     .slice(0, MAX_SUGGESTIONS)
     .map((e) => ({ entity_id: e.entity_id, name: e.name, type: e.type, affinity: e.affinity }));
 
