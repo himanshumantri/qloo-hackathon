@@ -156,7 +156,7 @@ export default function Wizard({ initial, startAtEnd, onSubmit, loading, error }
             City, for local restaurant picks (optional)
             <input value={form.city} onChange={(e) => set({ city: e.target.value })} placeholder="e.g. London" maxLength={60} />
           </label>
-          <p className="hint">Things your guests love (optional, separate with commas). Qloo uses these to match taste.</p>
+          <p className="hint">Things your guests love (optional, separate with commas). Qlooful uses these to match taste.</p>
           <label>
             Artists
             <input value={form.artists} onChange={(e) => set({ artists: e.target.value })} placeholder="e.g. Coldplay, Beyoncé" />
