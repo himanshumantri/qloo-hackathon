@@ -227,6 +227,15 @@ function stripAllergenClaims(text) {
 // Host-facing text calls the taste engine "Qlooful" (the prompts ask for it; this enforces it).
 const brand = (text) => (typeof text === 'string' ? text.replace(/Qloo(?!ful)/g, 'Qlooful') : text);
 
+// Qloo's own numbers for a pick, copied from the API response (never written by the model).
+function proof(entity) {
+  return {
+    affinity: entity.affinity ?? null,
+    popularity: entity.popularity ?? null,
+    drivers: (entity.drivers || []).map((d) => ({ name: qloo.nameOf(d.entity_id) || 'an input signal', score: d.score })),
+  };
+}
+
 // Keep only picks whose entity_id Qloo returned in this request; names/types come from Qloo.
 function validatePlan(plan, seen, hasAllergies = false) {
   let dropped = 0;
@@ -238,7 +247,7 @@ function validatePlan(plan, seen, hasAllergies = false) {
         dropped += 1;
         return [];
       }
-      return [{ entity_id: entity.entity_id, name: entity.name, type: entity.type, why: text(pick.why), ...extra(pick) }];
+      return [{ entity_id: entity.entity_id, name: entity.name, type: entity.type, why: text(pick.why), qloo: proof(entity), ...extra(pick) }];
     });
 
   const music = keep(plan.music);
@@ -343,7 +352,7 @@ async function composeMatchReply(match) {
     const keep = (list) =>
       (list || []).flatMap((p) => {
         const e = allowed.get(p.entity_id);
-        return e ? [{ entity_id: e.entity_id, name: e.name, type: e.type, why: brand(p.why) }] : [];
+        return e ? [{ entity_id: e.entity_id, name: e.name, type: e.type, why: brand(p.why), affinity: e.affinity ?? null, rank: e.rank ?? null }] : [];
       });
     picks = { closest: keep(result.closest), suggestions: keep(result.suggestions) };
   } catch (err) {
@@ -351,8 +360,8 @@ async function composeMatchReply(match) {
     text = matchTemplate(match);
   }
   // Fall back to Qloo's own lists if Claude cited nothing valid.
-  if (!picks.closest.length) picks.closest = match.closest.slice(0, 3).map((c) => ({ ...c, why: c.rank ? `Qlooful ranks it #${c.rank} closest.` : '' }));
-  if (!picks.suggestions.length) picks.suggestions = match.suggestions.slice(0, 3).map((c) => ({ ...c, why: '' }));
+  if (!picks.closest.length) picks.closest = match.closest.slice(0, 3).map((c) => ({ ...c, affinity: c.affinity ?? null, why: c.rank ? `Qlooful ranks it #${c.rank} closest.` : '' }));
+  if (!picks.suggestions.length) picks.suggestions = match.suggestions.slice(0, 3).map((c) => ({ ...c, affinity: c.affinity ?? null, why: '' }));
   return { verdict: match.verdict, guest: match.guest, ...text, ...picks };
 }
 

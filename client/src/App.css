@@ -490,3 +490,116 @@ dd {
   gap: 4px;
   font-size: 15px;
 }
+
+/* ---- Qlooful evidence: affinity scores, AI-note labels, live request log ---- */
+.affinity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.aff-label {
+  color: var(--text-h);
+}
+
+.aff-bar {
+  flex: 1;
+  min-width: 70px;
+  max-width: 160px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.aff-bar i {
+  display: block;
+  height: 100%;
+  background: #2e8b57;
+}
+
+.affinity b {
+  color: var(--text-h);
+}
+
+.aff-why {
+  flex-basis: 100%;
+}
+
+.affinity-note,
+.aff-inline {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+}
+
+.aff-inline {
+  display: inline;
+  margin: 0;
+  color: #2e8b57;
+}
+
+.ai-tag {
+  display: inline-block;
+  padding: 0 6px;
+  margin-right: 4px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+.qid {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.evidence-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid #2e8b57;
+  border-radius: 8px;
+  background: rgba(46, 139, 87, 0.08);
+  font-size: 14px;
+  color: var(--text-h);
+}
+
+.evidence-banner button {
+  align-self: flex-start;
+}
+
+.proof-title {
+  margin: 12px 0 0;
+  font-size: 16px;
+  color: var(--text-h);
+}
+
+.calls {
+  margin: 8px 0 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.calls li > span {
+  display: flex;
+  flex-direction: column;
+  overflow-wrap: anywhere;
+}
+
+.calls small {
+  font-family: var(--mono);
+  font-size: 12px;
+}

@@ -62,7 +62,7 @@ function App() {
     setDraft(form)
     try {
       const data = await post('/api/plan', toPayload(form))
-      const next = { form, plan: data.plan, signals: data.signals, checked: {}, createdAt: Date.now() }
+      const next = { form, plan: data.plan, signals: data.signals, evidence: data.evidence, checked: {}, createdAt: Date.now() }
       save(next)
       setSaved(next)
     } catch (e) {

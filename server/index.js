@@ -4,6 +4,7 @@ const cors = require('cors');
 const { buildPool, warmTags, OCCASIONS } = require('./pipeline');
 const { composePlan, composeMatchReply, MODEL } = require('./agent');
 const { findMatch, CATEGORY_TYPES } = require('./match');
+const { withTrace } = require('./qloo');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -119,12 +120,17 @@ app.post('/api/plan', aiBudget, async (req, res) => {
   const started = Date.now();
   plansInFlight += 1;
   try {
-    const built = await buildPool(form); // Qloo first
-    const { plan, dropped, usage } = await composePlan(form, built); // Claude strictly after
+    const { result, evidence } = await withTrace(async () => {
+      const built = await buildPool(form); // Qloo first
+      const composed = await composePlan(form, built); // Claude strictly after
+      return { built, composed };
+    });
+    const { built, composed } = result;
     res.json({
-      plan,
+      plan: composed.plan,
       signals: { ...built.signals, unresolved: built.unresolved },
-      meta: { model: MODEL, dropped, tokens: usage, ms: Date.now() - started },
+      evidence,
+      meta: { model: MODEL, dropped: composed.dropped, tokens: composed.usage, ms: Date.now() - started },
     });
   } catch (err) {
     console.error('plan failed:', err.message);
@@ -157,14 +163,15 @@ app.post('/api/match', aiBudget, async (req, res) => {
   }
   const picks = parsePicks(b.picks, category);
   try {
-    const match = await findMatch({ query, category, picks }); // Qloo decides
+    const { result: match, evidence } = await withTrace(() => findMatch({ query, category, picks })); // Qloo decides
     if (!match.found) {
       return res.json({
         found: false,
+        evidence,
         message: `Qlooful couldn't find "${query}". Check the spelling or try a more common name.`,
       });
     }
-    res.json({ found: true, ...(await composeMatchReply(match)) }); // Claude only words it
+    res.json({ found: true, evidence, ...(await composeMatchReply(match)) }); // Claude only words it
   } catch (err) {
     console.error('match failed:', err.message);
     res.status(502).json({ error: 'Could not check that right now. Please try again.' });
