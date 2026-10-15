@@ -36,9 +36,7 @@ function Recommendation({ result }) {
       <h4>{rec.headline}</h4>
       <Affinity qloo={rec.qloo} />
       {rec.onPlan && <small className="on-plan">Already on your list, so it is in the house.</small>}
-      <p>
-        <span className="ai-tag">AI note</span> {rec.reason}
-      </p>
+      <p>{rec.reason}</p>
       <small className="qid" title={rec.entity_id}>
         {rec.name} · Qlooful ID {rec.entity_id.slice(0, 8)}
       </small>

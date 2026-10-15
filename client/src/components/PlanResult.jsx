@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { Affinity } from './Rating'
 import { seconds } from '../format'
+import { sortByRating } from '../rating'
 
 const TYPE_LABEL = { brand: 'Brand', place: 'Place', artist: 'Artist', movie: 'Movie', tv_show: 'TV show' }
 
@@ -21,14 +22,12 @@ function Picks({ title, items, showCrunch }) {
     <section className="block">
       <h2>{title}</h2>
       <ul className="picks">
-        {items.map((p) => (
+        {sortByRating(items).map((p) => (
           <li key={p.entity_id}>
             <strong>{p.name}</strong> <small className="tag">{TYPE_LABEL[p.type] || p.type}</small>
             <Affinity qloo={p.qloo} />
             {showCrunch && typeof p.crunch === 'number' && <Crunch score={p.crunch} />}
-            <p>
-              <span className="ai-tag">AI note</span> {p.why}
-            </p>
+            <p>{p.why}</p>
             <small className="qid" title={p.entity_id}>
               Qlooful ID {p.entity_id.slice(0, 8)}
             </small>
@@ -115,8 +114,7 @@ function Proof({ signals, evidence, open, onToggle, panelRef }) {
       <summary>How Qlooful shaped this plan</summary>
       <p className="hint">
         Every food, music and watch pick above came from Qlooful&apos;s taste data, along with its match rating and
-        ID. The planner (AI) only chose among those results and wrote the notes marked &quot;AI note&quot; and the
-        checklist.
+        ID. The planner (AI) only chose among those results and wrote the explanations and the checklist.
       </p>
       <dl>
         {rows.map(([label, value]) => (
@@ -170,10 +168,6 @@ export default function PlanResult({ saved, onToggle, onReset, onParty }) {
       {evidence && evidence.requests > 0 && (
         <div className="evidence-banner" role="note">
           <strong>Built from {evidence.requests} live Qlooful requests</strong>
-          <span>
-            Every pick below carries Qlooful&apos;s own ID and match rating. Text marked &quot;AI note&quot; is the only part
-            written by AI.
-          </span>
           <button type="button" onClick={showProof}>
             See the live requests
           </button>
@@ -214,13 +208,16 @@ export default function PlanResult({ saved, onToggle, onReset, onParty }) {
       </section>
 
       <section className="block party-cta">
+        <div className="party-icons" aria-hidden="true">
+          🎈 🎶 🍻 🎉 🍿
+        </div>
         <h2>Ready for the party?</h2>
         <p className="hint">
           On the day, open the party page to handle last-minute guest requests and give each guest one personal
           recommendation.
         </p>
         <button type="button" className="primary" onClick={onParty}>
-          It&apos;s party time
+          🎉 It&apos;s party time 🥳
         </button>
       </section>
 

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { RatingChip } from './Rating'
 import { matchRating } from '../rating'
 import { seconds } from '../format'
+import { sortByRating } from '../rating'
 
 const CATEGORIES = [
   { id: 'food', label: 'Food or drink', placeholder: "e.g. Domino's" },
@@ -87,15 +88,13 @@ export default function GuestRequest({ plan, onMatch }) {
         <div className={`answer ${answer.verdict}`} role="status">
           <small className="tag">{VERDICT_LABEL[answer.verdict]}</small>
           <h3>{answer.headline}</h3>
-          <p>
-            <span className="ai-tag">AI note</span> {answer.reply}
-          </p>
+          <p>{answer.reply}</p>
           <p className="hint">Qlooful understood the request as {answer.guest.name}.</p>
           {answer.closest.length > 0 && answer.verdict !== 'on_list' && (
             <>
               <h4>Closest on your list</h4>
               <ul className="mini">
-                {answer.closest.map((c) => (
+                {sortByRating(answer.closest, (c) => c.affinity).map((c) => (
                   <li key={c.entity_id}>
                     <strong>{c.name}</strong>
                     <MatchNumbers item={c} />
@@ -109,7 +108,7 @@ export default function GuestRequest({ plan, onMatch }) {
             <>
               <h4>Qlooful suggests adding</h4>
               <ul className="mini">
-                {answer.suggestions.map((c) => (
+                {sortByRating(answer.suggestions, (c) => c.affinity).map((c) => (
                   <li key={c.entity_id}>
                     <strong>{c.name}</strong>
                     <MatchNumbers item={c} />

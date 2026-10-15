@@ -2,7 +2,7 @@ import GuestRequest from './GuestRequest'
 import GuestCards from './GuestCards'
 
 // Party day: handle last-minute requests and give each guest one personal recommendation.
-export default function PartyPage({ saved, onBack, onMatch, onUpdateGuest, onAddGuest, onRemoveGuest, onRecommend }) {
+export default function PartyPage({ saved, onBack, onMatch, onUpdateGuest, onAddGuest, onRemoveGuest, onRecommend, onNewParty }) {
   return (
     <div className="screen">
       <div className="party-head">
@@ -28,6 +28,18 @@ export default function PartyPage({ saved, onBack, onMatch, onUpdateGuest, onAdd
           onRemove={onRemoveGuest}
           onRecommend={onRecommend}
         />
+      </section>
+
+      <section className="block new-party">
+        <button
+          type="button"
+          className="new-party-btn"
+          onClick={() => {
+            if (window.confirm('Plan another party? This clears the current plan and your guests on this device.')) onNewParty()
+          }}
+        >
+          🥳 Plan another party
+        </button>
       </section>
     </div>
   )
