@@ -54,12 +54,23 @@ body {
   margin: 0;
 }
 
+/* Wallpaper: a house party under a light, warm wash so the page stays bright
+   while the party colours still come through. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(rgba(255, 250, 244, 0.4), rgba(255, 242, 230, 0.32)),
+    url('/host-wallpaper.jpg') right center / cover no-repeat;
+}
+
 #root {
   width: 1126px;
   max-width: 100%;
   margin: 0 auto;
   text-align: center;
-  border-inline: 1px solid var(--border);
   min-height: 100svh;
   display: flex;
   flex-direction: column;
