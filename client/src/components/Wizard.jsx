@@ -61,7 +61,7 @@ export default function Wizard({ initial, startAtEnd, onSubmit, loading, error }
       {step === 0 && (
         <fieldset>
           <legend>What are you hosting?</legend>
-          <div className="cards">
+          <div className="cards occasion-cards">
             {OCCASIONS.map((o) => (
               <label key={o.id} className={`card ${form.occasion === o.id ? 'selected' : ''}`}>
                 <input
@@ -87,7 +87,7 @@ export default function Wizard({ initial, startAtEnd, onSubmit, loading, error }
 
       {step === 1 && (
         <fieldset>
-          <legend>Who is coming?</legend>
+          <legend>How many guests are coming?</legend>
           <div className="cards" role="radiogroup" aria-label="How many guests">
             {GUEST_RANGES.map((g) => (
               <label key={g.id} className={`card ${form.guestRange === g.id ? 'selected' : ''}`}>

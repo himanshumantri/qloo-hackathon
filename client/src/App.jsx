@@ -121,7 +121,7 @@ function App() {
     <main className={`app ${saved && saved.view === 'party' ? 'wide' : ''}`}>
       <header>
         <h1>Qlooful Host</h1>
-        <p className="tagline">Plan the perfect night for your guests, powered by Qlooful.</p>
+        <p className="tagline">Plan a perfect night for your guests, powered by Qloo.</p>
       </header>
       {loading ? (
         <Loading />
